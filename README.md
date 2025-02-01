@@ -5,6 +5,8 @@
 
 ## Proj1:
 
+- Receive commands via serial port
+
 Explanation:
 - USART Initialization:
 
@@ -44,6 +46,8 @@ Explanation:
 -----
 
 ## Proj2:
+
+- Send commands via serial port
 
 Explanation:
 
