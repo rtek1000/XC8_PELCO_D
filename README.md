@@ -12,7 +12,7 @@ Explanation:
 
 - - The receive interrupt (RCIE) is enabled to handle incoming data.
 
-- - Interrupt Service Routine (ISR):
+- Interrupt Service Routine (ISR):
 
 - - The ISR is triggered when a byte is received.
 
