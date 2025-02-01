@@ -20,23 +20,23 @@ Explanation:
 
 - - If a complete 7-byte frame is received, the frameReady flag is set.
 
-Main Loop:
+- Main Loop:
 
-- The main loop checks the frameReady flag.
+- - The main loop checks the frameReady flag.
 
-- If a complete frame is ready, it processes the frame and resets the buffer and flags.
+- - If a complete frame is ready, it processes the frame and resets the buffer and flags.
 
-Checksum Validation:
+- Checksum Validation:
 
-- The checksum is calculated and validated before processing the command.
+- - The checksum is calculated and validated before processing the command.
 
-Command Processing:
+- Command Processing:
 
-- Replace the example logic with your specific application requirements.
+- - Replace the example logic with your specific application requirements.
 
-Notes:
-- The interrupt-driven approach ensures that the microcontroller can perform other tasks while waiting for data.
+- Notes:
+- - The interrupt-driven approach ensures that the microcontroller can perform other tasks while waiting for data.
 
-- Ensure the baud rate matches the configuration of the device sending the PELCO D commands.
+- - Ensure the baud rate matches the configuration of the device sending the PELCO D commands.
 
-- Debugging can be done by toggling an LED or printing debug information (if a debugger is available).
+- - Debugging can be done by toggling an LED or printing debug information (if a debugger is available).
