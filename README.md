@@ -47,23 +47,27 @@ Explanation:
 
 Explanation:
 
-- Button Inputs: The program monitors RB0-RB3 for button presses. When a button is pressed (logic low), the corresponding Pelco D frame is sent.
+- Button Inputs:
+- - The program monitors RB0-RB3 for button presses. When a button is pressed (logic low), the corresponding Pelco D frame is sent.
 
-- Pelco D Frame: The frame consists of 7 bytes:
+- Pelco D Frame:
+- - The frame consists of 7 bytes:
 
-- - Start byte: 0xFF
+- - - Start byte: 0xFF
 
-- - Address: 0x01 (can be changed as needed)
+- - - Address: 0x01 (can be changed as needed)
 
-- - Command 1 and Command 2: Define the movement (up, down, left, right, or combinations).
+- - - Command 1 and Command 2: Define the movement (up, down, left, right, or combinations).
 
-- - Data 1 and Data 2: Define the speed (fixed at 0x20 for speed 1).
+- - - Data 1 and Data 2: Define the speed (fixed at 0x20 for speed 1).
 
-- - Checksum: Sum of bytes 2 to 6.
+- - - Checksum: Sum of bytes 2 to 6.
 
-- USART: The USART is configured for 9600 baud, 8-bit data, no parity, and 1 stop bit.
+- USART:
+- - The USART is configured for 9600 baud, 8-bit data, no parity, and 1 stop bit.
 
-- Combined Movements: The program supports combined movements (e.g., up + left) by checking multiple buttons simultaneously.
+- Combined Movements:
+- - The program supports combined movements (e.g., up + left) by checking multiple buttons simultaneously.
 
 - Notes:
 - - The speed is fixed at 0x20 (speed 1) as per your requirement.
