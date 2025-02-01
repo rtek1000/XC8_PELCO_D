@@ -1,65 +1,45 @@
 ## Request:
 
-Could you help me with a program written in C for the XC8 compiler, using interrupt to receive data? In order not to take too long the interrupt routine, only one byte should be received at a time and release the interrupt. PIC16F648A microcontroller. The microcontroller needs to receive data via USART. The microcontroller needs to recognize the data received by the serial port using the basic PELCO D protocol with 7 bytes. The PELCO D protocol has the first byte fixed with hexadecimal value 0xFF; The second byte is the Address; The third byte is Command 1; The fourth byte is Command 2; The fifth byte is Data 1; The sixth byte is Data 2; The seventh byte is the Checksum. The Checksum is the result of the sum of the two bytes; starting with the second byte and up to the sixth byte, inclusive of the sixth byte.
+Could you help me with a program written in C for the XC8 compiler, using some pins as input and a serial output with a basic 7-byte Pelco D protocol? PIC16F648A microcontroller. The microcontroller needs to monitor 4 inputs, which will be activated with buttons. When the button is pressed, the microcontroller must understand it as a low logic signal. The data is sent via USART at 9600 baud. The microcontroller needs to form the frame data to be sent in a way that it can be expanded later. The PELCO D protocol has the first byte fixed with hexadecimal value 0xFF; The second byte is the Address; The third byte is Command 1; The fourth byte is Command 2; The fifth byte is Data 1; The sixth byte is Data 2; The seventh byte is the Checksum. The Checksum is the result of the sum of the two bytes; starting with the second byte and up to the sixth byte, including the sixth byte. The 4 buttons are for movement, 2 for horizontal (left and right sides) and another 2 buttons for vertical movement (up and down). It is possible to combine 1 vertical button with a horizontal button, as the Pelco D protocol allows this option. The movement speed is 1.
 
 -----
 
 ## Result
 
-Key Features:
-Interrupt-Driven USART Reception:
+This program monitors 4 input pins (for up, down, left, and right movements) and sends the corresponding Pelco D protocol frame via USART at 9600 baud when a button is pressed.
 
-The USART receive interrupt is used to handle incoming data.
+Assumptions:
+The 4 buttons are connected to PORTB (RB0, RB1, RB2, RB3).
 
-Only one byte is processed per interrupt to minimize interrupt latency.
+The USART TX pin is connected to RC6.
 
-PELCO D Protocol Handling:
-
-The program waits for the start byte (0xFF).
-
-It collects the 7-byte PELCO D frame and validates the checksum.
-
-Global Variables:
-
-A buffer (pelcoFrame) stores the incoming PELCO D frame.
-
-A flag (frameReady) indicates when a complete frame has been received.
+The microcontroller is running at 4 MHz (for 9600 baud rate).
 
 -----
 
 Explanation:
-USART Initialization:
+Button Inputs: The program monitors RB0-RB3 for button presses. When a button is pressed (logic low), the corresponding Pelco D frame is sent.
 
-The USART module is configured for a baud rate of 9600.
+Pelco D Frame: The frame consists of 7 bytes:
 
-The receive interrupt (RCIE) is enabled to handle incoming data.
+Start byte: 0xFF
 
-Interrupt Service Routine (ISR):
+Address: 0x01 (can be changed as needed)
 
-The ISR is triggered when a byte is received.
+Command 1 and Command 2: Define the movement (up, down, left, right, or combinations).
 
-The received byte is stored in the pelcoFrame buffer.
+Data 1 and Data 2: Define the speed (fixed at 0x20 for speed 1).
 
-If a complete 7-byte frame is received, the frameReady flag is set.
+Checksum: Sum of bytes 2 to 6.
 
-Main Loop:
+USART: The USART is configured for 9600 baud, 8-bit data, no parity, and 1 stop bit.
 
-The main loop checks the frameReady flag.
-
-If a complete frame is ready, it processes the frame and resets the buffer and flags.
-
-Checksum Validation:
-
-The checksum is calculated and validated before processing the command.
-
-Command Processing:
-
-Replace the example logic with your specific application requirements.
+Combined Movements: The program supports combined movements (e.g., up + left) by checking multiple buttons simultaneously.
 
 Notes:
-The interrupt-driven approach ensures that the microcontroller can perform other tasks while waiting for data.
+The speed is fixed at 0x20 (speed 1) as per your requirement.
 
-Ensure the baud rate matches the configuration of the device sending the PELCO D commands.
+The program waits for the button to be released before continuing, to avoid sending multiple frames for a single press.
 
-Debugging can be done by toggling an LED or printing debug information (if a debugger is available).
+You can expand the program to include more commands or features as needed.
 
