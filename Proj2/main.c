@@ -23,11 +23,25 @@
 // Debounce time in milliseconds
 #define DEBOUNCE_TIME 200
 
+// State machine states
+typedef enum {
+    STATE_IDLE,
+    STATE_BUTTON_PRESSED,
+    STATE_DEBOUNCE,
+    STATE_WAIT_RELEASE
+} State;
+
+// Global variables
+State currentState = STATE_IDLE;
+unsigned char up_pressed = 0, down_pressed = 0, left_pressed = 0, right_pressed = 0;
+unsigned long debounceStartTime = 0;
+
 // Function prototypes
 void USART_Init(void);
 void USART_Transmit(unsigned char data);
 void SendPelcoDFrame(unsigned char cmd1, unsigned char cmd2, unsigned char data1, unsigned char data2);
 void DelayMs(unsigned int ms);
+unsigned long GetElapsedTime(unsigned long startTime);
 
 void main(void) {
     // Set PORTB as input for buttons
@@ -38,50 +52,64 @@ void main(void) {
     USART_Init();
 
     while (1) {
-        // Variables to store button states
-        unsigned char up_pressed = 0, down_pressed = 0, left_pressed = 0, right_pressed = 0;
+        // State machine implementation
+        switch (currentState) {
+            case STATE_IDLE:
+                // Check if any button is pressed
+                if (!UP_BUTTON || !DOWN_BUTTON || !LEFT_BUTTON || !RIGHT_BUTTON) {
+                    currentState = STATE_BUTTON_PRESSED;
+                }
+                break;
 
-        // Wait for any button to be pressed
-        while (UP_BUTTON && DOWN_BUTTON && LEFT_BUTTON && RIGHT_BUTTON);
+            case STATE_BUTTON_PRESSED:
+                // Record the time when the button was pressed
+                debounceStartTime = GetElapsedTime(0);
+                currentState = STATE_DEBOUNCE;
+                break;
 
-        // Debounce delay
-        DelayMs(DEBOUNCE_TIME);
+            case STATE_DEBOUNCE:
+                // Wait for debounce time to elapse
+                if (GetElapsedTime(debounceStartTime) >= DEBOUNCE_TIME) {
+                    // Read button states after debounce
+                    up_pressed = !UP_BUTTON;
+                    down_pressed = !DOWN_BUTTON;
+                    left_pressed = !LEFT_BUTTON;
+                    right_pressed = !RIGHT_BUTTON;
 
-        // Read button states after debounce
-        if (!UP_BUTTON) up_pressed = 1;
-        if (!DOWN_BUTTON) down_pressed = 1;
-        if (!LEFT_BUTTON) left_pressed = 1;
-        if (!RIGHT_BUTTON) right_pressed = 1;
+                    // Check for combinations first (priority)
+                    if (up_pressed && left_pressed) {
+                        SendPelcoDFrame(0x00, 0x0C, 0x20, 0x20);  // Up + Left command
+                    } else if (up_pressed && right_pressed) {
+                        SendPelcoDFrame(0x00, 0x0A, 0x20, 0x20);  // Up + Right command
+                    } else if (down_pressed && left_pressed) {
+                        SendPelcoDFrame(0x00, 0x14, 0x20, 0x20);  // Down + Left command
+                    } else if (down_pressed && right_pressed) {
+                        SendPelcoDFrame(0x00, 0x12, 0x20, 0x20);  // Down + Right command
+                    } else if (up_pressed) {
+                        SendPelcoDFrame(0x00, 0x08, 0x00, 0x20);  // Up command
+                    } else if (down_pressed) {
+                        SendPelcoDFrame(0x00, 0x10, 0x00, 0x20);  // Down command
+                    } else if (left_pressed) {
+                        SendPelcoDFrame(0x00, 0x04, 0x20, 0x00);  // Left command
+                    } else if (right_pressed) {
+                        SendPelcoDFrame(0x00, 0x02, 0x20, 0x00);  // Right command
+                    }
 
-        // Check for combinations first (priority)
-        if (up_pressed && left_pressed) {
-            SendPelcoDFrame(0x00, 0x0C, 0x20, 0x20);  // Up + Left command
-            while (!UP_BUTTON || !LEFT_BUTTON);  // Wait for both buttons to release
-        } else if (up_pressed && right_pressed) {
-            SendPelcoDFrame(0x00, 0x0A, 0x20, 0x20);  // Up + Right command
-            while (!UP_BUTTON || !RIGHT_BUTTON);  // Wait for both buttons to release
-        } else if (down_pressed && left_pressed) {
-            SendPelcoDFrame(0x00, 0x14, 0x20, 0x20);  // Down + Left command
-            while (!DOWN_BUTTON || !LEFT_BUTTON);  // Wait for both buttons to release
-        } else if (down_pressed && right_pressed) {
-            SendPelcoDFrame(0x00, 0x12, 0x20, 0x20);  // Down + Right command
-            while (!DOWN_BUTTON || !RIGHT_BUTTON);  // Wait for both buttons to release
-        } else if (up_pressed) {
-            SendPelcoDFrame(0x00, 0x08, 0x00, 0x20);  // Up command
-            while (!UP_BUTTON);  // Wait for button release
-        } else if (down_pressed) {
-            SendPelcoDFrame(0x00, 0x10, 0x00, 0x20);  // Down command
-            while (!DOWN_BUTTON);  // Wait for button release
-        } else if (left_pressed) {
-            SendPelcoDFrame(0x00, 0x04, 0x20, 0x00);  // Left command
-            while (!LEFT_BUTTON);  // Wait for button release
-        } else if (right_pressed) {
-            SendPelcoDFrame(0x00, 0x02, 0x20, 0x00);  // Right command
-            while (!RIGHT_BUTTON);  // Wait for button release
+                    // Move to the next state
+                    currentState = STATE_WAIT_RELEASE;
+                }
+                break;
+
+            case STATE_WAIT_RELEASE:
+                // Wait for all buttons to be released
+                if (UP_BUTTON && DOWN_BUTTON && LEFT_BUTTON && RIGHT_BUTTON) {
+                    currentState = STATE_IDLE;
+                }
+                break;
         }
 
-        // Small delay to avoid rapid repeated presses
-        DelayMs(100);
+        // Other routines can run here without being blocked
+        // Example: Add additional tasks or logic here
     }
 }
 
@@ -118,13 +146,11 @@ void SendPelcoDFrame(unsigned char cmd1, unsigned char cmd2, unsigned char data1
     USART_Transmit(checksum);
 }
 
-// Simple delay function in milliseconds
-void DelayMs(unsigned int ms) {
-    unsigned int i, j;
-    for (i = 0; i < ms; i++) {
-        for (j = 0; j < 100; j++) {
-            // Adjust the inner loop for your clock speed
-            // This is a rough approximation for 4 MHz
-        }
-    }
+// Get elapsed time (in milliseconds)
+unsigned long GetElapsedTime(unsigned long startTime) {
+    // Implement a timer-based elapsed time function
+    // For simplicity, this is a placeholder. Replace with actual timer code.
+    static unsigned long counter = 0;
+    counter++;
+    return counter;  // Replace with actual elapsed time calculation
 }
