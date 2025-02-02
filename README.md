@@ -67,6 +67,26 @@ Explanation:
 
 - - - Checksum: Sum of bytes 2 to 6.
 
+- Debounce Mechanism:
+
+- - After detecting a button press, the program waits for DEBOUNCE_TIME (200ms) to ensure the button state is stable.
+
+- - Only after this delay are the button states read and processed.
+
+- Priority for Combinations:
+
+- - The program first checks for combinations (e.g., up + left) before checking for single-button presses.
+
+- - - This ensures that combinations are prioritized over single-button presses.
+
+- Wait for Button Release:
+
+- - After sending a command, the program waits for all relevant buttons to be released before continuing. This prevents multiple commands from being sent for a single press.
+
+- Small Delay After Processing:
+
+- - A small delay (DelayMs(100)) is added after processing a button press to avoid rapid repeated presses.
+
 - USART:
 - - The USART is configured for 9600 baud, 8-bit data, no parity, and 1 stop bit.
 
@@ -77,5 +97,9 @@ Explanation:
 - - The speed is fixed at 0x20 (speed 1) as per your requirement.
 
 - - The program waits for the button to be released before continuing, to avoid sending multiple frames for a single press.
+
+- - The DelayMs function is a simple loop-based delay. For more accurate timing, consider using a timer peripheral.
+
+- - The program assumes a 4 MHz clock. Adjust the delay loops if your clock speed is different.
 
 - - You can expand the program to include more commands or features as needed.
