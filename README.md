@@ -5,101 +5,46 @@
 
 ## Proj1:
 
-- Receive commands via serial port
+Key Features: Interrupt-Driven USART Reception:
 
-Explanation:
-- USART Initialization:
+The USART receive interrupt is used to handle incoming data.
 
-- - The USART module is configured for a baud rate of 9600.
+Only one byte is processed per interrupt to minimize interrupt latency.
 
-- - The receive interrupt (RCIE) is enabled to handle incoming data.
+PELCO D Protocol Handling:
 
-- Interrupt Service Routine (ISR):
+The program waits for the start byte (0xFF).
 
-- - The ISR is triggered when a byte is received.
+It collects the 7-byte PELCO D frame and validates the checksum.
 
-- - The received byte is stored in the pelcoFrame buffer.
+Global Variables:
 
-- - If a complete 7-byte frame is received, the frameReady flag is set.
+A buffer (pelcoFrame) stores the incoming PELCO D frame.
 
-- Main Loop:
-
-- - The main loop checks the frameReady flag.
-
-- - If a complete frame is ready, it processes the frame and resets the buffer and flags.
-
-- Checksum Validation:
-
-- - The checksum is calculated and validated before processing the command.
-
-- Command Processing:
-
-- - Replace the example logic with your specific application requirements.
-
-- Notes:
-- - The interrupt-driven approach ensures that the microcontroller can perform other tasks while waiting for data.
-
-- - Ensure the baud rate matches the configuration of the device sending the PELCO D commands.
-
-- - Debugging can be done by toggling an LED or printing debug information (if a debugger is available).
+A flag (frameReady) indicates when a complete frame has been received.
 
 -----
 
 ## Proj2:
 
-- Send commands via serial port
+This program monitors 4 input pins (for up, down, left, and right movements) and sends the corresponding Pelco D protocol frame via USART at 9600 baud when a button is pressed.
 
-Explanation:
+Assumptions: The 4 buttons are connected to PORTB (RB0, RB1, RB2, RB3).
 
-- Button Inputs:
-- - The program monitors RB0-RB3 for button presses. When a button is pressed (logic low), the corresponding Pelco D frame is sent.
+The USART TX pin is connected to RC6.
 
-- Pelco D Frame:
-- - The frame consists of 7 bytes:
+The microcontroller is running at 4 MHz (for 9600 baud rate).
 
-- - - Start byte: 0xFF
+To handle button combinations with priority and a validation time of at least 200ms, we can implement a debouncing mechanism and a priority system. The idea is to:
 
-- - - Address: 0x01 (can be changed as needed)
+Debounce the buttons: Ensure that button presses are stable for at least 200ms before considering them valid.
 
-- - - Command 1 and Command 2: Define the movement (up, down, left, right, or combinations).
+Prioritize combinations: Check for combinations first, and if no combination is detected, check for single-button presses.
 
-- - - Data 1 and Data 2: Define the speed (fixed at 0x20 for speed 1).
+It is possible to implement the functionality without blocking the program while waiting for the button to be released. This can be achieved by using a state machine and non-blocking code. The idea is to:
 
-- - - Checksum: Sum of bytes 2 to 6.
+Use a state machine to track the current state of the system (e.g., idle, button pressed, debouncing, etc.).
 
-- Debounce Mechanism:
+Use timers to handle debouncing and button release detection without blocking the main loop.
 
-- - After detecting a button press, the program waits for DEBOUNCE_TIME (200ms) to ensure the button state is stable.
-
-- - Only after this delay are the button states read and processed.
-
-- Priority for Combinations:
-
-- - The program first checks for combinations (e.g., up + left) before checking for single-button presses.
-
-- - - This ensures that combinations are prioritized over single-button presses.
-
-- Wait for Button Release:
-
-- - After sending a command, the program waits for all relevant buttons to be released before continuing. This prevents multiple commands from being sent for a single press.
-
-- Small Delay After Processing:
-
-- - A small delay (DelayMs(100)) is added after processing a button press to avoid rapid repeated presses.
-
-- USART:
-- - The USART is configured for 9600 baud, 8-bit data, no parity, and 1 stop bit.
-
-- Combined Movements:
-- - The program supports combined movements (e.g., up + left) by checking multiple buttons simultaneously.
-
-- Notes:
-- - The speed is fixed at 0x20 (speed 1) as per your requirement.
-
-- - The program waits for the button to be released before continuing, to avoid sending multiple frames for a single press.
-
-- - The DelayMs function is a simple loop-based delay. For more accurate timing, consider using a timer peripheral.
-
-- - The program assumes a 4 MHz clock. Adjust the delay loops if your clock speed is different.
-
-- - You can expand the program to include more commands or features as needed.
+Allow other routines to run concurrently by avoiding while loops that wait for button releases.
