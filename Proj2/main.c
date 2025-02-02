@@ -20,10 +20,14 @@
 #define PELCO_D_START_BYTE 0xFF
 #define PELCO_D_ADDRESS    0x01  // Camera address (can be changed as needed)
 
+// Debounce time in milliseconds
+#define DEBOUNCE_TIME 200
+
 // Function prototypes
 void USART_Init(void);
 void USART_Transmit(unsigned char data);
 void SendPelcoDFrame(unsigned char cmd1, unsigned char cmd2, unsigned char data1, unsigned char data2);
+void DelayMs(unsigned int ms);
 
 void main(void) {
     // Set PORTB as input for buttons
@@ -34,41 +38,50 @@ void main(void) {
     USART_Init();
 
     while (1) {
-        // Check for button presses and send corresponding Pelco D frame
-        if (UP_BUTTON == 0) {
+        // Variables to store button states
+        unsigned char up_pressed = 0, down_pressed = 0, left_pressed = 0, right_pressed = 0;
+
+        // Wait for any button to be pressed
+        while (UP_BUTTON && DOWN_BUTTON && LEFT_BUTTON && RIGHT_BUTTON);
+
+        // Debounce delay
+        DelayMs(DEBOUNCE_TIME);
+
+        // Read button states after debounce
+        if (!UP_BUTTON) up_pressed = 1;
+        if (!DOWN_BUTTON) down_pressed = 1;
+        if (!LEFT_BUTTON) left_pressed = 1;
+        if (!RIGHT_BUTTON) right_pressed = 1;
+
+        // Check for combinations first (priority)
+        if (up_pressed && left_pressed) {
+            SendPelcoDFrame(0x00, 0x0C, 0x20, 0x20);  // Up + Left command
+            while (!UP_BUTTON || !LEFT_BUTTON);  // Wait for both buttons to release
+        } else if (up_pressed && right_pressed) {
+            SendPelcoDFrame(0x00, 0x0A, 0x20, 0x20);  // Up + Right command
+            while (!UP_BUTTON || !RIGHT_BUTTON);  // Wait for both buttons to release
+        } else if (down_pressed && left_pressed) {
+            SendPelcoDFrame(0x00, 0x14, 0x20, 0x20);  // Down + Left command
+            while (!DOWN_BUTTON || !LEFT_BUTTON);  // Wait for both buttons to release
+        } else if (down_pressed && right_pressed) {
+            SendPelcoDFrame(0x00, 0x12, 0x20, 0x20);  // Down + Right command
+            while (!DOWN_BUTTON || !RIGHT_BUTTON);  // Wait for both buttons to release
+        } else if (up_pressed) {
             SendPelcoDFrame(0x00, 0x08, 0x00, 0x20);  // Up command
-            while (UP_BUTTON == 0);  // Wait for button release
-        }
-        if (DOWN_BUTTON == 0) {
+            while (!UP_BUTTON);  // Wait for button release
+        } else if (down_pressed) {
             SendPelcoDFrame(0x00, 0x10, 0x00, 0x20);  // Down command
-            while (DOWN_BUTTON == 0);  // Wait for button release
-        }
-        if (LEFT_BUTTON == 0) {
+            while (!DOWN_BUTTON);  // Wait for button release
+        } else if (left_pressed) {
             SendPelcoDFrame(0x00, 0x04, 0x20, 0x00);  // Left command
-            while (LEFT_BUTTON == 0);  // Wait for button release
-        }
-        if (RIGHT_BUTTON == 0) {
+            while (!LEFT_BUTTON);  // Wait for button release
+        } else if (right_pressed) {
             SendPelcoDFrame(0x00, 0x02, 0x20, 0x00);  // Right command
-            while (RIGHT_BUTTON == 0);  // Wait for button release
+            while (!RIGHT_BUTTON);  // Wait for button release
         }
 
-        // Check for combined movements (e.g., up + left)
-        if (UP_BUTTON == 0 && LEFT_BUTTON == 0) {
-            SendPelcoDFrame(0x00, 0x0C, 0x20, 0x20);  // Up + Left command
-            while (UP_BUTTON == 0 || LEFT_BUTTON == 0);  // Wait for both buttons to release
-        }
-        if (UP_BUTTON == 0 && RIGHT_BUTTON == 0) {
-            SendPelcoDFrame(0x00, 0x0A, 0x20, 0x20);  // Up + Right command
-            while (UP_BUTTON == 0 || RIGHT_BUTTON == 0);  // Wait for both buttons to release
-        }
-        if (DOWN_BUTTON == 0 && LEFT_BUTTON == 0) {
-            SendPelcoDFrame(0x00, 0x14, 0x20, 0x20);  // Down + Left command
-            while (DOWN_BUTTON == 0 || LEFT_BUTTON == 0);  // Wait for both buttons to release
-        }
-        if (DOWN_BUTTON == 0 && RIGHT_BUTTON == 0) {
-            SendPelcoDFrame(0x00, 0x12, 0x20, 0x20);  // Down + Right command
-            while (DOWN_BUTTON == 0 || RIGHT_BUTTON == 0);  // Wait for both buttons to release
-        }
+        // Small delay to avoid rapid repeated presses
+        DelayMs(100);
     }
 }
 
@@ -103,4 +116,15 @@ void SendPelcoDFrame(unsigned char cmd1, unsigned char cmd2, unsigned char data1
     USART_Transmit(data1);
     USART_Transmit(data2);
     USART_Transmit(checksum);
+}
+
+// Simple delay function in milliseconds
+void DelayMs(unsigned int ms) {
+    unsigned int i, j;
+    for (i = 0; i < ms; i++) {
+        for (j = 0; j < 100; j++) {
+            // Adjust the inner loop for your clock speed
+            // This is a rough approximation for 4 MHz
+        }
+    }
 }
